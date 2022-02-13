@@ -97,6 +97,20 @@ func (g *Grid) Layout(gtx Context, rowCount int, rowHeight int, widths []int, ce
 		width += w
 	}
 
+	// Update horizontal scroll position.
+	hScrollDelta := g.Hscroll.Scroll(gtx.Metric, gtx, gtx.Now, gesture.Horizontal)
+	if hScrollDelta != 0 {
+		g.HorPos += hScrollDelta
+		constrain(&g.HorPos, 0, width-gtx.Constraints.Max.X)
+	}
+
+	// Get vertical scroll info.
+	vScrollDelta := g.Vscroll.Scroll(gtx.Metric, gtx, gtx.Now, gesture.Vertical)
+	if vScrollDelta != 0 {
+		g.VertPos += vScrollDelta
+		constrain(&g.VertPos, 0, rowHeight*rowCount-gtx.Constraints.Max.Y)
+	}
+
 	firstRow, lastRow, rowOffset := FindRowStart(g.VertPos, gtx.Constraints.Max.Y, rowCount, rowHeight)
 	firstCol, lastCol, colOffset := FindColStart(g.HorPos, gtx.Constraints.Max.X, widths)
 	// Draw rows into macro.
@@ -147,18 +161,5 @@ func (g *Grid) Layout(gtx Context, rowCount int, rowHeight int, widths []int, ce
 	g.Hscroll.Add(gtx.Ops, image.Rect(-c.X, 0, c.X, 0))
 	cl.Pop()
 
-	// Update horizontal scroll position.
-	hScrollDelta := g.Hscroll.Scroll(gtx.Metric, gtx, gtx.Now, gesture.Horizontal)
-	if hScrollDelta != 0 {
-		g.HorPos += hScrollDelta
-		constrain(&g.HorPos, 0, width-gtx.Constraints.Max.X)
-	}
-
-	// Get vertical scroll info.
-	vScrollDelta := g.Vscroll.Scroll(gtx.Metric, gtx, gtx.Now, gesture.Vertical)
-	if vScrollDelta != 0 {
-		g.VertPos += vScrollDelta
-		constrain(&g.VertPos, 0, rowHeight*rowCount-gtx.Constraints.Max.Y)
-	}
 	return Dimensions{Size: listDims, Baseline: 0}
 }
