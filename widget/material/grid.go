@@ -55,14 +55,14 @@ func constrain(value *int, min int, max int) {
 	}
 }
 
-// calcWidths calculates widths of columns and total width of grid.
+// WeightedWidths calculates widths of columns and total width of grid.
 // Input is weights[], which are either in Device independent pixels, or
 // fractions of actual grid size when less than 1.0. Mixed fractions and
 // fixed width columns are allowed. Actual grid size comes from gtx.Max.X.
-func calcWidths(gtx layout.Context, weights []float32) []int {
+func WeightedWidths(gtx layout.Context, weights []float32) []unit.Value {
 	fracSum := float32(0.0)
 	fixWidth := 0
-	widths := make([]int, len(weights))
+	widths := make([]unit.Value, len(weights))
 	for _, w := range weights {
 		if w <= 1.0 {
 			fracSum += w
@@ -75,17 +75,17 @@ func calcWidths(gtx layout.Context, weights []float32) []int {
 	for i := range weights {
 		if weights[i] != 0 {
 			if weights[i] <= 1.0 {
-				widths[i] = int(math.Round(float64(weights[i] * scale)))
+				widths[i] = unit.Px(float32(math.Round(float64(weights[i] * scale))))
 			} else {
-				widths[i] = gtx.Px(unit.Dp(weights[i]))
+				widths[i] = unit.Dp(weights[i])
 			}
 		} else {
-			widths[i] = gtx.Constraints.Max.X / len(weights)
+			widths[i] = unit.Px(float32(gtx.Constraints.Max.X / len(weights)))
 		}
-		sum += widths[i]
+		sum += gtx.Px(widths[i])
 	}
 	// Make sure the sum is equal to Max.X
-	widths[len(widths)-1] += gtx.Constraints.Max.X - sum
+	widths[len(widths)-1] = unit.Add(gtx.Metric, widths[len(widths)-1], unit.Px(float32(gtx.Constraints.Max.X-sum)))
 	return widths
 }
 
@@ -115,34 +115,6 @@ func drawHeading(gtx layout.Context, headingFunc layout.ListElement, rowHeight i
 		cl.Pop()
 	}
 	return headingHeight
-}
-
-// LayoutFractWidths will draw a Grid without heading.
-// colWidths can be <1.0 for columns a fractions of the total width.
-func (g GridStyle) LayoutFractWidths(gtx layout.Context, rowCount int, rowHeightValue unit.Value,
-	colWeights []float32, cellFunc layout.Cell) layout.Dimensions {
-	// Convert from float32 that are either a fraction or a number of Dp, into pixels (Px).
-	colWidths := calcWidths(gtx, colWeights)
-	// Make array of unit.Value for the Layout function
-	widths := make([]unit.Value, len(colWeights))
-	for i := 0; i < len(colWidths); i++ {
-		widths[i] = unit.Value{V: colWeights[i], U: unit.UnitPx}
-	}
-	return (TableStyle)(g).Layout(gtx, rowCount, rowHeightValue, widths, cellFunc, nil)
-}
-
-// LayoutFractWidths will draw a Table with a heading.
-// colWidths can be <1.0 for columns a fractions of the total width.
-func (t TableStyle) LayoutFractWidths(gtx layout.Context, rowCount int, rowHeightValue unit.Value,
-	colWeights []float32, cellFunc layout.Cell, headingFunc layout.ListElement) layout.Dimensions {
-	// Convert from float32 that are either a fraction or a number of Dp, into pixels (Px).
-	colWidths := calcWidths(gtx, colWeights)
-	// Make array of unit.Value for the Layout function
-	widths := make([]unit.Value, len(colWeights))
-	for i := 0; i < len(colWidths); i++ {
-		widths[i] = unit.Value{V: float32(colWidths[i]), U: unit.UnitPx}
-	}
-	return t.Layout(gtx, rowCount, rowHeightValue, widths, cellFunc, headingFunc)
 }
 
 // Layout will draw a table with a heading, using fixed column widths and row height.
