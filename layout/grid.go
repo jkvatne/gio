@@ -23,7 +23,7 @@ type Grid struct {
 }
 
 // Cell is the layout function for a grid cell, with row,col parameters.
-type Cell func(gtx Context, col int, row int) Dimensions
+type Cell func(gtx Context, row, col int) Dimensions
 
 // FindColStart find first and last visible cells in row by looping over all cells.
 // Also returns offset into first cell (in pixels).
@@ -131,7 +131,7 @@ func (g *Grid) Layout(gtx Context, rowCount int, rowHeight unit.Value, widths []
 			c.Constraints = Exact(image.Pt(colWidths[col], rowHeightPx))
 			// Draw the cell into macro
 			macro := op.Record(c.Ops)
-			g.dims = append(g.dims, cellFunc(c, col, row))
+			g.dims = append(g.dims, cellFunc(c, row, col))
 			g.call = append(g.call, macro.Stop())
 		}
 		// Generate all the rendering commands for the children, translated to correct location.
