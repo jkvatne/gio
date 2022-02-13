@@ -10,6 +10,7 @@ import (
 	"gioui.org/io/pointer"
 	"gioui.org/op"
 	"gioui.org/op/clip"
+	"gioui.org/unit"
 )
 
 type Grid struct {
@@ -89,13 +90,18 @@ func constrain(value *int, min int, max int) {
 }
 
 // Layout the Grid.
-func (g *Grid) Layout(gtx Context, rowCount int, rowHeight int, widths []int, cellFunc Cell) Dimensions {
+func (g *Grid) Layout(gtx Context, rowCount int, rowHeight unit.Value, widths []unit.Value, cellFunc Cell) Dimensions {
 	listDims := image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
 
+	// Calculate column widths in pixels. Width is sum of widths.
 	width := 0
-	for _, w := range widths {
-		width += w
+	colWidths := make([]int, len(widths))
+	for i, v := range widths {
+		px := gtx.Px(v)
+		width += px
+		colWidths[i] = px
 	}
+	rowHeightPx := gtx.Px(rowHeight)
 
 	// Update horizontal scroll position.
 	hScrollDelta := g.Hscroll.Scroll(gtx.Metric, gtx, gtx.Now, gesture.Horizontal)
@@ -108,11 +114,11 @@ func (g *Grid) Layout(gtx Context, rowCount int, rowHeight int, widths []int, ce
 	vScrollDelta := g.Vscroll.Scroll(gtx.Metric, gtx, gtx.Now, gesture.Vertical)
 	if vScrollDelta != 0 {
 		g.VertPos += vScrollDelta
-		constrain(&g.VertPos, 0, rowHeight*rowCount-gtx.Constraints.Max.Y)
+		constrain(&g.VertPos, 0, rowHeightPx*rowCount-gtx.Constraints.Max.Y)
 	}
 
-	firstRow, lastRow, rowOffset := FindRowStart(g.VertPos, gtx.Constraints.Max.Y, rowCount, rowHeight)
-	firstCol, lastCol, colOffset := FindColStart(g.HorPos, gtx.Constraints.Max.X, widths)
+	firstRow, lastRow, rowOffset := FindRowStart(g.VertPos, gtx.Constraints.Max.Y, rowCount, rowHeightPx)
+	firstCol, lastCol, colOffset := FindColStart(g.HorPos, gtx.Constraints.Max.X, colWidths)
 	// Draw rows into macro.
 	macro := op.Record(gtx.Ops)
 	clp := clip.Rect{Max: gtx.Constraints.Max}.Push(gtx.Ops)
@@ -122,7 +128,7 @@ func (g *Grid) Layout(gtx Context, rowCount int, rowHeight int, widths []int, ce
 		g.call = g.call[:0]
 		for col := firstCol; col <= lastCol; col++ {
 			c := gtx
-			c.Constraints = Exact(image.Pt(widths[col], rowHeight))
+			c.Constraints = Exact(image.Pt(colWidths[col], rowHeightPx))
 			// Draw the cell into macro
 			macro := op.Record(c.Ops)
 			g.dims = append(g.dims, cellFunc(c, col, row))
@@ -138,7 +144,7 @@ func (g *Grid) Layout(gtx Context, rowCount int, rowHeight int, widths []int, ce
 			trans.Pop()
 			xPos += g.dims[col-firstCol].Size.X
 		}
-		rowOffset += rowHeight
+		rowOffset += rowHeightPx
 	}
 	clp.Pop()
 	call := macro.Stop()

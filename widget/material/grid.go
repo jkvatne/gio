@@ -215,7 +215,7 @@ func (g GridStyle) Layout(gtx layout.Context, rowCount int, rowHeightValue unit.
 
 	// Draw grid by running macro clipped to grid size
 	cl := clip.Rect{Max: gtx.Constraints.Max}.Push(gtx.Ops)
-	dim := g.State.Grid.Layout(gtx, rowCount, rowHeight, widths, cellFunc)
+	dim := g.State.Grid.Layout(gtx, rowCount, rowHeightValue, colWidths, cellFunc)
 	cl.Pop()
 
 	// Get horizontal scroll info.
