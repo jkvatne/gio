@@ -94,13 +94,13 @@ func (g *Grid) Layout(gtx Context, rowCount int, rowHeight unit.Value, widths []
 	listDims := image.Pt(gtx.Constraints.Max.X, gtx.Constraints.Max.Y)
 
 	// Calculate column widths in pixels. Width is sum of widths.
-	width := 0
+	w := unit.Value{V: 0, U: widths[0].U}
 	colWidths := make([]int, len(widths))
 	for i, v := range widths {
-		px := gtx.Px(v)
-		width += px
-		colWidths[i] = px
+		w.V += v.V
+		colWidths[i] = gtx.Px(v)
 	}
+	width := gtx.Px(w)
 	rowHeightPx := gtx.Px(rowHeight)
 
 	// Update horizontal scroll position.

@@ -121,14 +121,15 @@ func drawHeading(gtx layout.Context, headingFunc layout.ListElement, rowHeight i
 func (t TableStyle) Layout(gtx layout.Context, rowCount int, rowHeightValue unit.Value,
 	colWidths []unit.Value, cellFunc layout.Cell, headingFunc layout.ListElement) layout.Dimensions {
 	// Calculate column widths in pixels. Width is sum of widths.
-	width := 0
+	w := unit.Value{V: 0, U: colWidths[0].U}
 	widths := make([]int, len(colWidths))
 	for i, v := range colWidths {
-		width += gtx.Px(v)
+		w.V += v.V
 		widths[i] = gtx.Px(v)
 	}
-	// Make header correct scrolling to the far right position.
-	if t.AnchorStrategy == Occupy && gtx.Constraints.Max.X > width {
+	width := gtx.Px(w)
+	// Make header position correct scrolling to the far right position.
+	if t.AnchorStrategy == Occupy && gtx.Constraints.Max.X < width {
 		widths[len(colWidths)-1] += gtx.Px(t.VScrollbarStyle.Width(gtx.Metric))
 	}
 	// Draw heading.
@@ -148,13 +149,14 @@ func (g GridStyle) Layout(gtx layout.Context, rowCount int, rowHeightValue unit.
 	vBarWidth := gtx.Px(g.VScrollbarStyle.Width(gtx.Metric))
 
 	// Calculate column widths in pixels. Width is sum of widths.
-	width := 0
+	w := unit.Value{V: 0, U: colWidths[0].U}
 	widths := make([]int, len(colWidths))
 	for i, v := range colWidths {
-		width += gtx.Px(v)
+		w.V += v.V
 		widths[i] = gtx.Px(v)
 	}
 
+	width := gtx.Px(w)
 	// Hide horizontal scroll-bar when not needed.
 	if width <= gtx.Constraints.Max.X {
 		hBarWidth = 0
